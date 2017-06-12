@@ -88,7 +88,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFutureTimeout<U> then(Function<T, U> proc)
     {
-        return thenIf(v -> Optional.ofNullable(proc.apply(v)));
+        return thenIf(v -> Optional.of(proc.apply(v)));
     }
 
     @Override
@@ -103,7 +103,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
         CompletionStage<Optional<U>> stageIf = future.thenComposeAsync(optional -> {
             if ( optional.isPresent() ) {
                 CompletionStage<U> applied = stage.apply(optional.get());
-                return applied.thenApplyAsync(Optional::ofNullable, executor);
+                return applied.thenApplyAsync(Optional::of, executor);
             }
 
             return CompletableFuture.completedFuture(Optional.empty());
@@ -119,7 +119,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
 
     @Override
     public StagedFuture<T> withTimeout(Duration max, Supplier<T> defaultValue) {
-        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.of(defaultValue.get()));
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
@@ -135,7 +135,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.ofNullable(handler.apply(value)));
+        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.of(handler.apply(value)));
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 

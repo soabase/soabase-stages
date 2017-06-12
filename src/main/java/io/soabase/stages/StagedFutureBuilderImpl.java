@@ -50,6 +50,6 @@ class StagedFutureBuilderImpl<T> implements StagedFutureBuilder {
     @Override
     public <U> StagedFutureTimeout<U> thenStage(CompletionStage<U> stage) {
         // async isn't necessary - it's just a conversion to optional
-        return new StagedFutureImpl<>(stage.thenApply(Optional::ofNullable), executor, tracing);
+        return new StagedFutureImpl<>(stage.thenApply(Optional::of), executor, tracing);
     }
 }
