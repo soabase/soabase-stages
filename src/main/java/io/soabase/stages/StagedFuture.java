@@ -8,42 +8,157 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface StagedFuture<T> extends StagedFutureTerminal<T> {
-    static Executor asyncPool() {
-        return StagedFutureImpl.asyncPool;
-    }
-
+/**
+ * A facade that makes staged/pipelined CompletableFutures much easier to create and manage
+ */
+public interface StagedFuture<T> {
+    /**
+     * Start a StagedFuture that executes tasks synchronously in the calling thread.
+     *
+     * @return builder
+     */
     static StagedFutureBuilder sync() {
         return sync(null);
     }
 
-    static StagedFutureBuilder sync(Tracing tracing) {
-        return async(Runnable::run, tracing);
-    }
-
+    /**
+     * Start a StagedFuture that executes tasks asynchronously using the given executor.
+     *
+     * @param executor executor to use to run tasks
+     * @return builder
+     */
     static StagedFutureBuilder async(Executor executor) {
         return async(executor, null);
     }
 
+    /**
+     * Start a StagedFuture that executes tasks asynchronously using the
+     * {@link java.util.concurrent.ForkJoinPool#commonPool()}
+     *
+     * @return builder
+     */
+    static StagedFutureBuilder asyncPool() {
+        return async(StagedFutureImpl.asyncPool, null);
+    }
+
+    /**
+     * Start a StagedFuture that executes tasks synchronously in the calling thread.
+     * You can provide a tracer that wraps/traces all tasks.
+     *
+     * @param tracing the tracer
+     * @return builder
+     */
+    static StagedFutureBuilder sync(Tracing tracing) {
+        return async(Runnable::run, tracing);
+    }
+
+    /**
+     * Start a StagedFuture that executes tasks asynchronously using the given executor.
+     * You can provide a tracer that wraps/traces all tasks.
+     *
+     * @param executor executor to use to run tasks
+     * @param tracing the tracer
+     * @return builder
+     */
     static StagedFutureBuilder async(Executor executor, Tracing tracing) {
         return new StagedFutureBuilderImpl(executor, tracing);
     }
 
+    /**
+     * Start a StagedFuture that executes tasks asynchronously using the
+     * {@link java.util.concurrent.ForkJoinPool#commonPool()}
+     * You can provide a tracer that wraps/traces all tasks.
+     *
+     * @param tracing the tracer
+     * @return builder
+     */
+    static StagedFutureBuilder asyncPool(Tracing tracing) {
+        return async(StagedFutureImpl.asyncPool, tracing);
+    }
+
+    /**
+     * <p>
+     * If the current stage completes successfully, execute the given task
+     * synchronously or asynchronously depending on how the StagedFuture was built.
+     * The given task receives the result of this stage's execution.
+     * The given task returns an optional value that indicates whether or not the next stage
+     * can execute. If {@link Optional#empty()} is returned, the entire StagedFuture
+     * chain is considered to be aborted and no future tasks will execute. The
+     * {@link #whenAborted(Runnable)} completer will get called.
+     * </p>
+     *
+     * <p>
+     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * a timeout and an optional default to be set for the task.
+     * </p>
+     *
+     * @param proc task to execute
+     * @return next stage in the chain
+     */
     <U> TimeoutStagedFuture<U> thenIf(Function<T, Optional<U>> proc);
 
+    /**
+     * <p>
+     * If the current stage completes successfully, execute the given task
+     * synchronously or asynchronously depending on how the StagedFuture was built.
+     * The given task receives the result of this stage's execution.
+     * </p>
+     *
+     * <p>
+     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * a timeout and an optional default to be set for the task.
+     * </p>
+     *
+     * @param proc task to execute
+     * @return next stage in the chain
+     */
     <U> TimeoutStagedFuture<U> then(Function<T, U> proc);
 
+    /**
+     * <p>
+     * If the current stage completes successfully, chain to the given CompletionStage
+     * synchronously or asynchronously depending on how the StagedFuture was built.
+     * </p>
+     *
+     * <p>
+     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * a timeout and an optional default to be set for the task.
+     * </p>
+     *
+     * @param stage stage to chain to
+     * @return next stage in the chain
+     */
     <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage);
 
-    @Override
-    StagedFutureTerminal<T> whenComplete(Consumer<T> handler);
+    /**
+     * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.
+     *
+     * @param handler consumer for the value
+     * @return next stage in the chain
+     */
+    StagedFuture<T> whenComplete(Consumer<T> handler);
 
-    @Override
-    StagedFutureTerminal<T> whenAborted(Runnable handler);
+    /**
+     * If this stage or any previous stages in the chain return {@link Optional#empty()}
+     * from {@link #thenIf(Function)}, the handler is called
+     *
+     * @param handler abort handler
+     * @return next stage in the chain
+     */
+    StagedFuture<T> whenAborted(Runnable handler);
 
-    @Override
-    StagedFutureTerminal<T> whenFailed(Consumer<Throwable> handler);
+    /**
+     * If this stage or any previous stages in the chain complete exceptionally, the handler is called
+     *
+     * @param handler exception handler
+     * @return next stage in the chain
+     */
+    StagedFuture<T> whenFailed(Consumer<Throwable> handler);
 
-    @Override
+    /**
+     * Return the internally managed CompletionStage
+     *
+     * @return CompletionStage
+     */
     CompletionStage<Optional<T>> unwrap();
 }

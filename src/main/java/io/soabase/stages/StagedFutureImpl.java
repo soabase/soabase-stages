@@ -36,7 +36,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
 
     StagedFutureImpl(Supplier<Optional<T>> proc, Executor executor, Tracing tracing) {
         this(
-            Objects.requireNonNull(executor, "executor cannot be null"),
+            executor,
             CompletableFuture.supplyAsync(tracingProc(tracing, proc), executor),
             tracing
         );
@@ -44,7 +44,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
 
     StagedFutureImpl(CompletionStage<Optional<T>> future, Executor executor, Tracing tracing) {
         this(
-            Objects.requireNonNull(executor, "executor cannot be null"),
+            executor,
             future,
             tracing
         );
@@ -89,48 +89,35 @@ class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
     }
 
     @Override
-    public StagedFutureTerminal<T> whenComplete(Consumer<T> handler) {
+    public StagedFuture<T> whenComplete(Consumer<T> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<T>> next = future.thenApply(optional -> {
+        CompletionStage<Optional<T>> next = future.thenApplyAsync(optional -> {
             optional.ifPresent(handler);
             return optional;
-        });
+        }, executor);
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
-    public StagedFutureTerminal<T> whenAbortedOrFailed(Consumer<Optional<Throwable>> handler) {
+    public StagedFuture<T> whenAborted(Runnable handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<T>> next = future.handle((optional, e) -> {
-            if (e != null) {
-                handler.accept(Optional.of(e));
-                optional = Optional.empty();
-            } else if (!optional.isPresent()) {
-                handler.accept(Optional.empty());
-            }
-            return optional;
-        });
-        return new StagedFutureImpl<>(executor, next, tracing);
-    }
-
-    @Override
-    public StagedFutureTerminal<T> whenAborted(Runnable handler) {
-        Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<T>> next = future.thenApply(optional -> {
+        CompletionStage<Optional<T>> next = future.thenApplyAsync(optional -> {
             if ( !optional.isPresent() ) {
                 handler.run();
             }
             return optional;
-        });
+        }, executor);
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
-    public StagedFutureTerminal<T> whenFailed(Consumer<Throwable> handler) {
-        CompletionStage<Optional<T>> next = future.exceptionally(e -> {
-            handler.accept(e);
+    public StagedFuture<T> whenFailed(Consumer<Throwable> handler) {
+        CompletionStage<Optional<T>> next = future.handleAsync((__, e) -> {
+            if ( e != null ) {
+                handler.accept(e);
+            }
             return Optional.empty();
-        });
+        }, executor);
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 

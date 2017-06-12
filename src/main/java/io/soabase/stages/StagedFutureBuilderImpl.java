@@ -2,6 +2,7 @@ package io.soabase.stages;
 
 import io.soabase.stages.tracing.Tracing;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -12,7 +13,7 @@ class StagedFutureBuilderImpl<T> implements StagedFutureBuilder {
     private final Tracing tracing;
 
     StagedFutureBuilderImpl(Executor executor, Tracing tracing) {
-        this.executor = executor;
+        this.executor = Objects.requireNonNull(executor, "executor cannot be null");
         this.tracing = tracing;
     }
 
