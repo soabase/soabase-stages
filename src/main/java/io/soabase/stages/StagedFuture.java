@@ -103,14 +103,14 @@ public interface StagedFuture<T> {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param proc task to execute
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> thenIf(Function<T, Optional<U>> proc);
+    <U> StagedFutureTimeout<U> thenIf(Function<T, Optional<U>> proc);
 
     /**
      * <p>
@@ -120,14 +120,14 @@ public interface StagedFuture<T> {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param proc task to execute
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> then(Function<T, U> proc);
+    <U> StagedFutureTimeout<U> then(Function<T, U> proc);
 
     /**
      * <p>
@@ -136,14 +136,14 @@ public interface StagedFuture<T> {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param stage stage to chain to
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage);
+    <U> StagedFutureTimeout<U> thenStage(Function<Optional<T>, CompletionStage<Optional<U>>> stage);
 
     /**
      * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.

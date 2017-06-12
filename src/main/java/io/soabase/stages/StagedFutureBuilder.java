@@ -33,14 +33,14 @@ public interface StagedFutureBuilder {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param proc task to execute
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> thenIf(Supplier<Optional<U>> proc);
+    <U> StagedFutureTimeout<U> thenIf(Supplier<Optional<U>> proc);
 
     /**
      * <p>
@@ -48,14 +48,14 @@ public interface StagedFutureBuilder {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param proc task to execute
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> then(Supplier<U> proc);
+    <U> StagedFutureTimeout<U> then(Supplier<U> proc);
 
     /**
      * <p>
@@ -63,12 +63,12 @@ public interface StagedFutureBuilder {
      * </p>
      *
      * <p>
-     * Note: the returned value is a {@link TimeoutStagedFuture} which allows
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
      * a timeout and an optional default to be set for the task.
      * </p>
      *
      * @param stage first stage
      * @return next stage in the chain
      */
-    <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage);
+    <U> StagedFutureTimeout<U> thenStage(CompletionStage<Optional<U>> stage);
 }

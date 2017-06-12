@@ -22,7 +22,7 @@ import java.util.function.Supplier;
  * Allows setting a timeout and an optional default value for the
  * task that was just set in the StagedFuture
  */
-public interface TimeoutStagedFuture<T> extends StagedFuture<T> {
+public interface StagedFutureTimeout<T> extends StagedFuture<T> {
     /**
      * Sets a timeout for this stage's task. If the given timeout
      * elapses before the task completes this stage is completed

@@ -33,17 +33,17 @@ class StagedFutureBuilderImpl<T> implements StagedFutureBuilder {
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> then(Supplier<U> proc) {
+    public <U> StagedFutureTimeout<U> then(Supplier<U> proc) {
         return thenIf(() -> Optional.of(proc.get()));
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> thenIf(Supplier<Optional<U>> proc) {
+    public <U> StagedFutureTimeout<U> thenIf(Supplier<Optional<U>> proc) {
         return new StagedFutureImpl<>(proc, executor, tracing);
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage) {
+    public <U> StagedFutureTimeout<U> thenStage(CompletionStage<Optional<U>> stage) {
         return new StagedFutureImpl<>(stage, executor, tracing);
     }
 }

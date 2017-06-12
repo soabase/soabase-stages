@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
+class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     private final Executor executor;
     private final CompletionStage<Optional<T>> future;
     private final Tracing tracing;
@@ -71,7 +71,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> thenIf(Function<T, Optional<U>> proc) {
+    public <U> StagedFutureTimeout<U> thenIf(Function<T, Optional<U>> proc) {
         Objects.requireNonNull(proc, "proc cannot be null");
 
         Function<T, Optional<U>> tracedProc = tracingProc(tracing, proc);
@@ -79,27 +79,26 @@ class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage) {
+    public <U> StagedFutureTimeout<U> thenStage(Function<Optional<T>, CompletionStage<Optional<U>>> stage) {
         Objects.requireNonNull(stage, "stage cannot be null");
-        // TODO needs testing - I'm not certain this does what's intended
-        return new StagedFutureImpl<>(executor, future.thenComposeAsync(__ -> stage, executor), tracing);
+        return new StagedFutureImpl<>(executor, future.thenComposeAsync(stage, executor), tracing);
     }
 
     @Override
-    public <U> TimeoutStagedFuture<U> then(Function<T, U> proc)
+    public <U> StagedFutureTimeout<U> then(Function<T, U> proc)
     {
         return thenIf(v -> Optional.of(proc.apply(v)));
     }
 
     @Override
     public StagedFuture<T> withTimeout(Duration max) {
-        CompletionStage<Optional<T>> timeout = Timeout.within(future, max);
+        CompletionStage<Optional<T>> timeout = TimeoutWrapper.within(future, max);
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
     @Override
     public StagedFuture<T> withTimeout(Duration max, Supplier<T> defaultValue) {
-        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
+        CompletionStage<Optional<T>> timeout = TimeoutWrapper.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
