@@ -25,6 +25,61 @@
         <slf4j-version>1.7.24</slf4j-version>
     </properties>
 
+    <name>Soabase Stages</name>
+    <description>A facade that makes staged/pipelined CompletableFutures much easier to create and manage</description>
+    <url>https://github.com/soabase/soabase-stages</url>
+    <inceptionYear>2017</inceptionYear>
+
+    <organization>
+        <name>Soabase</name>
+        <url>https://github.com/soabase</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Jordan Zimmerman</name>
+            <email>jordan@jordanzimmerman.com</email>
+            <timezone>-5</timezone>
+            <url>https://github.com/randgalt/</url>
+            <roles>
+                <role>Author</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/soabase/soabase-stages</url>
+        <connection>scm:git:https://github.com/soabase/soabase-stages.git</connection>
+        <developerConnection>scm:git:git@github.com:soabase/soabase-stages.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/soabase/soabase-stages/issues</url>
+    </issueManagement>
+
+    <distributionManagement>
+        <repository>
+            <id>sonatype-nexus-staging</id>
+            <name>Sonatype Nexus Staging</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+        </repository>
+        <snapshotRepository>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
