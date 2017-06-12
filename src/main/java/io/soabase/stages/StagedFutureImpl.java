@@ -88,7 +88,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFutureTimeout<U> then(Function<T, U> proc)
     {
-        return thenIf(v -> Optional.of(proc.apply(v)));
+        return thenIf(v -> Optional.ofNullable(proc.apply(v)));
     }
 
     @Override
@@ -103,7 +103,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
         CompletionStage<Optional<U>> stageIf = future.thenComposeAsync(optional -> {
             if ( optional.isPresent() ) {
                 CompletionStage<U> applied = stage.apply(optional.get());
-                return applied.thenApplyAsync(Optional::of, executor);
+                return applied.thenApplyAsync(Optional::ofNullable, executor);
             }
 
             return CompletableFuture.completedFuture(Optional.empty());
@@ -135,7 +135,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.of(handler.apply(value)));
+        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.ofNullable(handler.apply(value)));
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 
@@ -156,6 +156,15 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
                 handler.accept(e);
             }
             return Optional.empty();
+        }, executor);
+        return new StagedFutureImpl<>(executor, next, tracing);
+    }
+
+    @Override
+    public StagedFuture<T> whenFinal(Runnable handler) {
+        CompletionStage<Optional<T>> next = future.handleAsync((value, __) -> {
+            handler.run();
+            return (value != null) ? value : Optional.empty();
         }, executor);
         return new StagedFutureImpl<>(executor, next, tracing);
     }

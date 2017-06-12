@@ -200,6 +200,14 @@ public interface StagedFuture<T> {
     StagedFuture<T> whenFailed(Consumer<Throwable> handler);
 
     /**
+     * Handler calls when the chain completes for any reason: success, failure or abort
+     *
+     * @param handler exception handler
+     * @return next stage in the chain
+     */
+    StagedFuture<T> whenFinal(Runnable handler);
+
+    /**
      * Return the internally managed CompletionStage
      *
      * @return CompletionStage
