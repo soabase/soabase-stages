@@ -35,6 +35,8 @@ StagedFuture.async(executor)
 - Allows a task to signal that the remainder of the chain should be canceled
 - Simplified API
 
+Note: you can easily access the managed `CompletionStage` when needed by calling `StagedFuture#unwrap()`.
+
 ### Using Stages
 
 Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
