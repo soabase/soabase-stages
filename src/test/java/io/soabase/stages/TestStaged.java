@@ -19,23 +19,33 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestStaged {
     private TestTracing tracing;
+    private ExecutorService executor;
 
     @Before
     public void setup() {
         tracing = new TestTracing();
+        ThreadFactory threadFactory = r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            return thread;
+        };
+        executor = Executors.newCachedThreadPool(threadFactory);
     }
 
     @After
     public void tearDown() {
+        executor.shutdownNow();
+        executor = null;
         TestTracing.clearContext();
         tracing = null;
     }
@@ -48,7 +58,7 @@ public class TestStaged {
             .then(s -> worker("3"))
             .whenCompleteYield(s -> tracing.getTracing());
 
-        Optional<List<TestTracing.Trace>> optional = future.unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        Optional<List<TestTracing.Trace>> optional = complete(future);
         assertThat(optional).isPresent();
         //noinspection ConstantConditions
         List<TestTracing.Trace> traces = optional.get();
@@ -66,7 +76,7 @@ public class TestStaged {
     @Test
     public void testAbort() throws Exception {
         AtomicBoolean isAborted = new AtomicBoolean(false);
-        StagedFuture.sync(tracing)
+        complete(StagedFuture.sync(tracing)
             .then(() -> worker("1"))
             .thenIf(s -> Optional.empty())
             .then(s -> worker("2"))
@@ -74,9 +84,7 @@ public class TestStaged {
             .then(s -> worker("4"))
             .then(s -> worker("5"))
             .then(s -> worker("6"))
-            .whenAborted(() -> isAborted.set(true))
-            .unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS)
-        ;
+            .whenAborted(() -> isAborted.set(true)));
 
         assertThat(isAborted.get()).isTrue();
 
@@ -92,9 +100,84 @@ public class TestStaged {
         assertThat(traces.get(3).context).isNull();
     }
 
+    @Test
+    public void testTimeout() throws Exception {
+        AtomicBoolean isTimeout = new AtomicBoolean(false);
+        complete(StagedFuture.async(executor, tracing)
+            .then(() -> worker("1"))
+            .then(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2))
+            .then(s -> worker("3"))
+            .then(s -> worker("4"))
+            .whenFailed(e -> {
+                while ( e instanceof CompletionException ) {
+                    e = e.getCause();
+                }
+                if (e instanceof TimeoutException) {
+                    isTimeout.set(true);
+                }
+            }));
+
+        assertThat(isTimeout.get()).isTrue();
+
+        List<TestTracing.Trace> traces = tracing.getTracing();
+        assertThat(traces).size().isEqualTo(3);
+        assertThat(traces.get(0).status).isEqualTo("start");
+        assertThat(traces.get(0).context).isEqualTo("1");
+        assertThat(traces.get(1).status).isEqualTo("success");
+        assertThat(traces.get(1).context).isEqualTo("1");
+        assertThat(traces.get(2).status).isEqualTo("start");
+        assertThat(traces.get(2).context).isEqualTo("2");
+    }
+
+    @Test
+    public void testTimeoutAndDefault() throws Exception {
+        complete(StagedFuture.async(executor, tracing)
+            .then(() -> worker("1"))
+            .then(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2), () -> "default")
+            .then(this::worker)
+            .then(s -> worker("4")));
+
+        List<TestTracing.Trace> traces = tracing.getTracing();
+        assertThat(traces).size().isEqualTo(7);
+        assertThat(traces.get(0).status).isEqualTo("start");
+        assertThat(traces.get(0).context).isEqualTo("1");
+        assertThat(traces.get(1).status).isEqualTo("success");
+        assertThat(traces.get(1).context).isEqualTo("1");
+        assertThat(traces.get(2).status).isEqualTo("start");
+        assertThat(traces.get(2).context).isEqualTo("2");
+        assertThat(traces.get(3).status).isEqualTo("start");
+        assertThat(traces.get(3).context).isEqualTo("default");
+        assertThat(traces.get(4).status).isEqualTo("success");
+        assertThat(traces.get(4).context).isEqualTo("default");
+        assertThat(traces.get(5).status).isEqualTo("start");
+        assertThat(traces.get(5).context).isEqualTo("4");
+        assertThat(traces.get(6).status).isEqualTo("success");
+        assertThat(traces.get(6).context).isEqualTo("4");
+    }
+
+    private <T> Optional<T> complete(StagedFuture<T> stagedFuture) throws Exception {
+        return complete(stagedFuture.unwrap());
+    }
+
+    private <T> Optional<T> complete(CompletionStage<Optional<T>> stage) throws Exception {
+        return stage.toCompletableFuture().get(5, TimeUnit.SECONDS);
+    }
+
     private String worker(String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
+        return context;
+    }
+
+    private String hangingWorker(String context) {
+        TestTracing.setContext(context);
+        tracing.resetLastContext(context);
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
         return context;
     }
 }
