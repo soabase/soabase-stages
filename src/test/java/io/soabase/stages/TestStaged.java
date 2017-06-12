@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -155,6 +156,35 @@ public class TestStaged {
         assertThat(traces.get(6).context).isEqualTo("4");
     }
 
+    @Test
+    public void testFailure() throws Exception {
+        AtomicReference<String> exceptionMessage = new AtomicReference<>();
+        complete(StagedFuture.async(executor, tracing)
+            .then(() -> worker("1"))
+            .then(s -> failureWorker("2"))
+            .then(s -> worker("3"))
+            .then(s -> worker("4"))
+            .whenFailed(e -> {
+                while ( e instanceof CompletionException ) {
+                    e = e.getCause();
+                }
+                exceptionMessage.set(e.getMessage());
+            }));
+
+        assertThat(exceptionMessage.get()).isEqualTo("2");
+
+        List<TestTracing.Trace> traces = tracing.getTracing();
+        assertThat(traces).size().isEqualTo(4);
+        assertThat(traces.get(0).status).isEqualTo("start");
+        assertThat(traces.get(0).context).isEqualTo("1");
+        assertThat(traces.get(1).status).isEqualTo("success");
+        assertThat(traces.get(1).context).isEqualTo("1");
+        assertThat(traces.get(2).status).isEqualTo("start");
+        assertThat(traces.get(2).context).isEqualTo("2");
+        assertThat(traces.get(3).status).isEqualTo("fail");
+        assertThat(traces.get(3).context).isEqualTo("2");
+    }
+
     private <T> Optional<T> complete(StagedFuture<T> stagedFuture) throws Exception {
         return complete(stagedFuture.unwrap());
     }
@@ -169,7 +199,13 @@ public class TestStaged {
         return context;
     }
 
-    private String hangingWorker(String context) {
+    private String failureWorker(String context) {
+        TestTracing.setContext(context);
+        tracing.resetLastContext(context);
+        throw new RuntimeException(context);
+    }
+
+    private String hangingWorker(@SuppressWarnings("SameParameterValue") String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
         try {
