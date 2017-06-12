@@ -40,12 +40,6 @@ Note: you can easily access the managed `CompletionStage` when needed by calling
 
 ### Using Stages
 
-Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
-
-| GroupId | ArtifactId |
-|---------|------------|
-| io.soabase.stages | soabase-stages |
-
 #### Starting a chain
 
 Similarly to the builders in `CompletableFuture` you start a chain using the builders in `StagedFuture`. There are syncrhonous and asynchronous builders:
