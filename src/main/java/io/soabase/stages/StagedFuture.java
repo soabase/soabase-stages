@@ -154,6 +154,15 @@ public interface StagedFuture<T> {
     StagedFuture<T> whenComplete(Consumer<T> handler);
 
     /**
+     * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.
+     * The handler can map the value.
+     *
+     * @param handler mapper for the value
+     * @return the staged value
+     */
+    <U> CompletionStage<U> whenCompleteYield(Function<T, U> handler);
+
+    /**
      * If this stage or any previous stages in the chain return {@link Optional#empty()}
      * from {@link #thenIf(Function)}, the handler is called
      *

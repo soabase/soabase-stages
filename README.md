@@ -26,3 +26,12 @@ StagedFuture.async(executor)
     .whenComplete(result -> handleResult(result))
     .whenFailed(e -> handleFailure(e));
 ``` 
+
+### Using Stages
+
+Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
+
+| GroupId | ArtifactId |
+|---------|------------|
+| io.soabase.stages | soabase-stages |
+

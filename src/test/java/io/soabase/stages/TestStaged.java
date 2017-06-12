@@ -15,34 +15,81 @@
  */
 package io.soabase.stages;
 
-import io.soabase.stages.tracing.Tracing;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.time.Duration;
-import java.util.concurrent.Executors;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestStaged {
+    private TestTracing tracing;
+
+    @Before
+    public void setup() {
+        tracing = new TestTracing();
+    }
+
+    @After
+    public void tearDown() {
+        TestTracing.clearContext();
+        tracing = null;
+    }
+
     @Test
     public void testBasic() throws Exception {
-        StagedFuture<String> stagedFuture = StagedFuture.async(Executors.newCachedThreadPool(), Tracing.console())
-            .then(() -> simulateFindFile("hey")).withTimeout(Duration.ofSeconds(5))//, () -> new File("timed-out"))
-            .then(f -> simulateReadFile(f, true))
-            .whenComplete(System.out::println)
-            .whenFailed(Throwable::printStackTrace);
-        stagedFuture.unwrap().toCompletableFuture().get();
-    }
+        CompletionStage<List<TestTracing.Trace>> future = StagedFuture.sync(tracing)
+            .then(() -> worker("1"))
+            .then(s -> worker("2"))
+            .then(s -> worker("3"))
+            .whenCompleteYield(s -> tracing.getTracing());
 
-    private static File simulateFindFile(String aName) {
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        List<TestTracing.Trace> traces = future.toCompletableFuture().get(5, TimeUnit.SECONDS);
+        assertThat(traces).isNotNull();
+        assertThat(traces).size().isEqualTo(6);
+        for ( int i = 0; i < 6; i += 2 ) {
+            String context = Integer.toString((i / 2) + 1);
+            assertThat(traces.get(i).status).isEqualTo("start");
+            assertThat(traces.get(i).context).isEqualTo(context);
+            assertThat(traces.get(i + 1).status).isEqualTo("success");
+            assertThat(traces.get(i + 1).context).isEqualTo(context);
         }
-        return new File(aName);
     }
 
-    private static String simulateReadFile(File f, boolean something) {
-        return new File(f, Boolean.toString(something)).getPath();
+    @Test
+    public void testAbort() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        StagedFuture.sync(tracing)
+            .then(() -> worker("1"))
+            .then(s -> worker("2"))
+            .thenIf(s -> Optional.empty())
+            .whenAborted(latch::countDown);
+
+        assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue();
+
+        List<TestTracing.Trace> traces = tracing.getTracing();
+        assertThat(traces).size().isEqualTo(6);
+        for ( int i = 0; i < 4; i += 2 ) {
+            String context = Integer.toString((i / 2) + 1);
+            assertThat(traces.get(i).status).isEqualTo("start");
+            assertThat(traces.get(i).context).isEqualTo(context);
+            assertThat(traces.get(i + 1).status).isEqualTo("success");
+            assertThat(traces.get(i + 1).context).isEqualTo(context);
+        }
+        assertThat(traces.get(4).status).isEqualTo("start");
+        assertThat(traces.get(4).context).isNull();
+        assertThat(traces.get(5).status).isEqualTo("success");
+        assertThat(traces.get(5).context).isNull();
+    }
+
+    private String worker(String context) {
+        TestTracing.setContext(context);
+        tracing.resetLastContext(context);
+        return context;
     }
 }
