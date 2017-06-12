@@ -8,7 +8,7 @@ A tiny library that makes staged/pipelined CompletableFutures much easier to cre
 
 - You have a sequence of tasks that pipeline or chain
 - These tasks can be executed **synchronously** or **asynchronously**
-- You might need to **abort/canel** the chain in the middle
+- You might need to **abort/cancel** the chain in the middle
 - You might need to provide a **timeout** for the tasks
 
 Most of this can be done with Java 8's CompletableFuture/CompletionStage today. Timeouts
