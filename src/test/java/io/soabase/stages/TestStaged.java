@@ -75,6 +75,16 @@ public class TestStaged {
     }
 
     @Test
+    public void testWrappedOptional() throws Exception {
+        AtomicBoolean weGotHere = new AtomicBoolean();
+        complete(StagedFuture.sync()
+            .then(() -> Optional.of("hey"))
+            .then(heyOpt -> (heyOpt.isPresent() && heyOpt.get().equals("hey")) ? Optional.empty() : Optional.of("fail"))
+            .whenComplete(shouldBeEmpty -> weGotHere.set(!shouldBeEmpty.isPresent())));
+        assertThat(weGotHere.get()).isTrue();
+    }
+
+    @Test
     public void testAbort() throws Exception {
         AtomicBoolean isAborted = new AtomicBoolean(false);
         complete(StagedFuture.sync(tracing)
@@ -199,7 +209,7 @@ public class TestStaged {
         return context;
     }
 
-    private String failureWorker(String context) {
+    private String failureWorker(@SuppressWarnings("SameParameterValue") String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
         throw new RuntimeException(context);

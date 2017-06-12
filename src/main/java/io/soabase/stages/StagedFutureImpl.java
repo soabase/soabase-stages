@@ -92,9 +92,16 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     }
 
     @Override
-    public <U> StagedFutureTimeout<U> thenStageIf(Function<Optional<T>, CompletionStage<Optional<U>>> stage) {
+    public <U> StagedFutureTimeout<U> thenStageIf(Function<T, CompletionStage<Optional<U>>> stage) {
         Objects.requireNonNull(stage, "stage cannot be null");
-        return new StagedFutureImpl<>(executor, future.thenComposeAsync(stage, executor), tracing);
+        CompletionStage<Optional<U>> stageIf = future.thenComposeAsync(optional -> {
+            if ( optional.isPresent() ) {
+                return stage.apply(optional.get());
+            }
+
+            return CompletableFuture.completedFuture(Optional.empty());
+        }, executor);
+        return new StagedFutureImpl<>(executor, stageIf, tracing);
     }
 
     @Override

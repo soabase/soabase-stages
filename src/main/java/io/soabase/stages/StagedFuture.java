@@ -147,7 +147,7 @@ public interface StagedFuture<T> {
      * @param stage stage to chain to
      * @return next stage in the chain
      */
-    <U> StagedFutureTimeout<U> thenStageIf(Function<Optional<T>, CompletionStage<Optional<U>>> stage);
+    <U> StagedFutureTimeout<U> thenStageIf(Function<T, CompletionStage<Optional<U>>> stage);
 
     /**
      * <p>
