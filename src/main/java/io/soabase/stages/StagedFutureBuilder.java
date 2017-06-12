@@ -52,6 +52,10 @@ public interface StagedFutureBuilder {
      * a timeout and an optional default to be set for the task.
      * </p>
      *
+     * <p>
+     * Important: Procs that return <code>null</code> are not supported
+     * </p>
+     *
      * @param proc task to execute
      * @return next stage in the chain
      */
@@ -70,5 +74,20 @@ public interface StagedFutureBuilder {
      * @param stage first stage
      * @return next stage in the chain
      */
-    <U> StagedFutureTimeout<U> thenStage(CompletionStage<Optional<U>> stage);
+    <U> StagedFutureTimeout<U> thenStageIf(CompletionStage<Optional<U>> stage);
+
+    /**
+     * <p>
+     * Use the given CompletionStage as the initial stage for this StagedFuture.
+     * </p>
+     *
+     * <p>
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
+     * a timeout and an optional default to be set for the task.
+     * </p>
+     *
+     * @param stage first stage
+     * @return next stage in the chain
+     */
+    <U> StagedFutureTimeout<U> thenStage(CompletionStage<U> stage);
 }

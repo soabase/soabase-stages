@@ -74,14 +74,15 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     public <U> StagedFutureTimeout<U> thenIf(Function<T, Optional<U>> proc) {
         Objects.requireNonNull(proc, "proc cannot be null");
 
-        Function<T, Optional<U>> tracedProc = tracingProc(tracing, proc);
-        return new StagedFutureImpl<>(executor, future.thenApplyAsync(optional -> optional.flatMap(tracedProc), executor), tracing);
-    }
-
-    @Override
-    public <U> StagedFutureTimeout<U> thenStage(Function<Optional<T>, CompletionStage<Optional<U>>> stage) {
-        Objects.requireNonNull(stage, "stage cannot be null");
-        return new StagedFutureImpl<>(executor, future.thenComposeAsync(stage, executor), tracing);
+        // don't burn a thread if the optional is empty
+        CompletionStage<Optional<U>> nextStage = future.thenCompose(optional -> {
+            if (optional.isPresent()) {
+                Function<T, Optional<U>> tracedProc = tracingProc(tracing, proc);
+                return future.thenApplyAsync(__ -> tracedProc.apply(optional.get()), executor);
+            }
+            return CompletableFuture.completedFuture(Optional.empty());
+        });
+        return new StagedFutureImpl<>(executor, nextStage, tracing);
     }
 
     @Override
@@ -91,43 +92,61 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     }
 
     @Override
+    public <U> StagedFutureTimeout<U> thenStageIf(Function<Optional<T>, CompletionStage<Optional<U>>> stage) {
+        Objects.requireNonNull(stage, "stage cannot be null");
+        return new StagedFutureImpl<>(executor, future.thenComposeAsync(stage, executor), tracing);
+    }
+
+    @Override
+    public <U> StagedFutureTimeout<U> thenStage(Function<T, CompletionStage<U>> stage) {
+        Objects.requireNonNull(stage, "stage cannot be null");
+        CompletionStage<Optional<U>> stageIf = future.thenComposeAsync(optional -> {
+            if ( optional.isPresent() ) {
+                CompletionStage<U> applied = stage.apply(optional.get());
+                return applied.thenApplyAsync(Optional::of, executor);
+            }
+
+            return CompletableFuture.completedFuture(Optional.empty());
+        }, executor);
+        return new StagedFutureImpl<>(executor, stageIf, tracing);
+    }
+
+    @Override
     public StagedFuture<T> withTimeout(Duration max) {
-        CompletionStage<Optional<T>> timeout = TimeoutWrapper.within(future, max);
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max);
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
     @Override
     public StagedFuture<T> withTimeout(Duration max, Supplier<T> defaultValue) {
-        CompletionStage<Optional<T>> timeout = TimeoutWrapper.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
     @Override
     public StagedFuture<T> whenComplete(Consumer<T> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<T>> next = future.thenApplyAsync(optional -> {
-            optional.ifPresent(handler);
-            return optional;
-        }, executor);
-        return new StagedFutureImpl<>(executor, next, tracing);
+        return whenCompleteYield(value -> {
+            handler.accept(value);
+            return value;
+        });
     }
 
     @Override
-    public <U> CompletionStage<U> whenCompleteYield(Function<T, U> handler) {
+    public <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        return future.thenApplyAsync(optional -> handler.apply(optional.orElse(null)), executor);
+        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.of(handler.apply(value)));
+        return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
     public StagedFuture<T> whenAborted(Runnable handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<T>> next = future.thenApplyAsync(optional -> {
-            if ( !optional.isPresent() ) {
-                handler.run();
-            }
-            return optional;
+        CompletionStage<Optional<T>> wrapped = Aborted.whenAbortedAsync(future, () -> {
+            handler.run();
+            return Optional.empty();
         }, executor);
-        return new StagedFutureImpl<>(executor, next, tracing);
+        return new StagedFutureImpl<>(executor, wrapped, tracing);
     }
 
     @Override

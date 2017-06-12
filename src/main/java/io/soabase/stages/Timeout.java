@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 // see https://dzone.com/articles/asynchronous-timeouts
-public class TimeoutWrapper {
+public class Timeout {
     /**
      * The underlying thread only used to complete exceptionally. We just need the queued scheduler
      */
@@ -97,6 +97,6 @@ public class TimeoutWrapper {
         return future;
     }
 
-    private TimeoutWrapper() {
+    private Timeout() {
     }
 }

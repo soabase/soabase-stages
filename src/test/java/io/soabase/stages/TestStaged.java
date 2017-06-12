@@ -21,8 +21,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,13 +42,16 @@ public class TestStaged {
 
     @Test
     public void testBasic() throws Exception {
-        CompletionStage<List<TestTracing.Trace>> future = StagedFuture.sync(tracing)
+        StagedFuture<List<TestTracing.Trace>> future = StagedFuture.sync(tracing)
             .then(() -> worker("1"))
             .then(s -> worker("2"))
             .then(s -> worker("3"))
             .whenCompleteYield(s -> tracing.getTracing());
 
-        List<TestTracing.Trace> traces = future.toCompletableFuture().get(5, TimeUnit.SECONDS);
+        Optional<List<TestTracing.Trace>> optional = future.unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        assertThat(optional).isPresent();
+        //noinspection ConstantConditions
+        List<TestTracing.Trace> traces = optional.get();
         assertThat(traces).isNotNull();
         assertThat(traces).size().isEqualTo(6);
         for ( int i = 0; i < 6; i += 2 ) {
@@ -65,7 +66,7 @@ public class TestStaged {
     @Test
     public void testAbort() throws Exception {
         AtomicBoolean isAborted = new AtomicBoolean(false);
-        StagedFuture.asyncPool(tracing)
+        StagedFuture.sync(tracing)
             .then(() -> worker("1"))
             .thenIf(s -> Optional.empty())
             .then(s -> worker("2"))
@@ -73,11 +74,11 @@ public class TestStaged {
             .then(s -> worker("4"))
             .then(s -> worker("5"))
             .then(s -> worker("6"))
-            //.whenAborted(() -> isAborted.set(true))
-            //.unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS)
+            .whenAborted(() -> isAborted.set(true))
+            .unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS)
         ;
 
-        Thread.sleep(3000);
+        assertThat(isAborted.get()).isTrue();
 
         List<TestTracing.Trace> traces = tracing.getTracing();
         assertThat(traces).size().isEqualTo(4);
@@ -91,29 +92,9 @@ public class TestStaged {
         assertThat(traces.get(3).context).isNull();
     }
 
-    @Test
-    public void testAbort2() throws Exception {
-        CompletableFuture.supplyAsync(() -> worker2("1"))
-            .thenApply(s -> worker2("2"))
-            .thenApply(s -> worker2("3"))
-            .thenApply(s -> worker2("4"))
-            .thenApply(s -> worker2("5"))
-            .thenApply(s -> worker2("6"))
-            //.whenAborted(() -> isAborted.set(true))
-            //.unwrap().toCompletableFuture().get(5, TimeUnit.SECONDS)
-        ;
-
-        Thread.sleep(3000);
-    }
-
     private String worker(String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
-        return context;
-    }
-
-    private String worker2(String context) {
-        System.err.println(context);
         return context;
     }
 }

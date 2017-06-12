@@ -124,6 +124,10 @@ public interface StagedFuture<T> {
      * a timeout and an optional default to be set for the task.
      * </p>
      *
+     * <p>
+     * Important: Procs that return <code>null</code> are not supported
+     * </p>
+     *
      * @param proc task to execute
      * @return next stage in the chain
      */
@@ -143,7 +147,23 @@ public interface StagedFuture<T> {
      * @param stage stage to chain to
      * @return next stage in the chain
      */
-    <U> StagedFutureTimeout<U> thenStage(Function<Optional<T>, CompletionStage<Optional<U>>> stage);
+    <U> StagedFutureTimeout<U> thenStageIf(Function<Optional<T>, CompletionStage<Optional<U>>> stage);
+
+    /**
+     * <p>
+     * If the current stage completes successfully, chain to the given CompletionStage
+     * synchronously or asynchronously depending on how the StagedFuture was built.
+     * </p>
+     *
+     * <p>
+     * Note: the returned value is a {@link StagedFutureTimeout} which allows
+     * a timeout and an optional default to be set for the task.
+     * </p>
+     *
+     * @param stage stage to chain to
+     * @return next stage in the chain
+     */
+    <U> StagedFutureTimeout<U> thenStage(Function<T, CompletionStage<U>> stage);
 
     /**
      * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.
@@ -158,9 +178,9 @@ public interface StagedFuture<T> {
      * The handler can map the value.
      *
      * @param handler mapper for the value
-     * @return the staged value
+     * @return next stage in the chain
      */
-    <U> CompletionStage<U> whenCompleteYield(Function<T, U> handler);
+    <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler);
 
     /**
      * If this stage or any previous stages in the chain return {@link Optional#empty()}
