@@ -8,7 +8,7 @@ A tiny library that makes staged/pipelined CompletableFutures much easier to cre
 
 - You have a sequence of tasks that pipeline or chain
 - These tasks can be executed **synchronously** or **asynchronously**
-- You might need to **abort/canel** the chain in the middle
+- You might need to **abort/cancel** the chain in the middle
 - You might need to provide a **timeout** for the tasks
 
 Most of this can be done with Java 8's CompletableFuture/CompletionStage today. Timeouts
@@ -39,12 +39,6 @@ StagedFuture.async(executor)
 Note: you can easily access the managed `CompletionStage` when needed by calling `StagedFuture#unwrap()`.
 
 ### Using Stages
-
-Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
-
-| GroupId | ArtifactId |
-|---------|------------|
-| io.soabase.stages | soabase-stages |
 
 #### Starting a chain
 
