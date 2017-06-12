@@ -28,6 +28,13 @@ StagedFuture.async(executor)
     .whenFailed(e -> handleFailure(e));
 ``` 
 
+### Benefits Over Raw CompletableFuture/CompletionStage
+
+- Can easily set timeouts and timeouts with default values for tasks (without waiting for Java 9)
+- Allows setting the executor once instead of with each chained call
+- Allows a task to signal that the remainder of the chain should be canceled
+- Simplified API
+
 ### Using Stages
 
 Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
