@@ -48,7 +48,7 @@ Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C
 
 #### Starting a chain
 
-Similaryly to the builders in `CompletableFuture` you start a chain using the builders in `StagedFuture`. There are syncrhonous and asynchronous builders:
+Similarly to the builders in `CompletableFuture` you start a chain using the builders in `StagedFuture`. There are syncrhonous and asynchronous builders:
 
 - `StagedFuture.sync()` - starts a StagedFuture chain that executes tasks synchronously
 - `StagedFuture.async(executor)` - starts a StagedFuture chain that executes tasks asynchronously using the given executor
