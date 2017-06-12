@@ -2,14 +2,13 @@ package io.soabase.stages;
 
 import io.soabase.stages.tracing.Tracing;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface StagedFuture<T> extends StagedFutureTerminal<T>, StagedFutureTimeout {
+public interface StagedFuture<T> extends StagedFutureTerminal<T> {
     static Executor asyncPool() {
         return StagedFutureImpl.asyncPool;
     }
@@ -30,14 +29,11 @@ public interface StagedFuture<T> extends StagedFutureTerminal<T>, StagedFutureTi
         return new StagedFutureBuilderImpl(executor, tracing);
     }
 
-    <U> StagedFuture<U> thenIf(Function<T, Optional<U>> proc);
+    <U> TimeoutStagedFuture<U> thenIf(Function<T, Optional<U>> proc);
 
-    <U> StagedFuture<U> then(Function<T, U> proc);
+    <U> TimeoutStagedFuture<U> then(Function<T, U> proc);
 
-    <U> StagedFuture<U> then(CompletionStage<Optional<U>> stage);
-
-    @Override
-    StagedFuture<T> withTimeout(Duration max);
+    <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage);
 
     @Override
     StagedFutureTerminal<T> whenComplete(Consumer<T> handler);

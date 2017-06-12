@@ -14,11 +14,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-class StagedFutureImpl<T> implements StagedFuture<T> {
+class StagedFutureImpl<T> implements StagedFuture<T>, TimeoutStagedFuture<T> {
     private final Executor executor;
     private final CompletionStage<Optional<T>> future;
     private final Tracing tracing;
-    private final Duration max;
 
     private static final boolean useCommonPool =
         (ForkJoinPool.getCommonPoolParallelism() > 1);
@@ -35,23 +34,19 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
         public void execute(Runnable r) { new Thread(r).start(); }
     }
 
-    StagedFutureImpl(Supplier<Optional<T>> proc, Executor executor, Duration max, Tracing tracing) {
+    StagedFutureImpl(Supplier<Optional<T>> proc, Executor executor, Tracing tracing) {
         this(
             Objects.requireNonNull(executor, "executor cannot be null"),
             CompletableFuture.supplyAsync(tracingProc(tracing, proc), executor),
-            max,
-            tracing,
-            true
+            tracing
         );
     }
 
-    StagedFutureImpl(CompletionStage<Optional<T>> future, Executor executor, Duration max, Tracing tracing) {
+    StagedFutureImpl(CompletionStage<Optional<T>> future, Executor executor, Tracing tracing) {
         this(
             Objects.requireNonNull(executor, "executor cannot be null"),
             future,
-            max,
-            tracing,
-            true
+            tracing
         );
     }
 
@@ -61,29 +56,36 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
     }
 
     @Override
-    public StagedFuture<T> withTimeout(Duration max) {
-        return new StagedFutureImpl<>(executor, future, max, tracing, false);
-    }
-
-    @Override
-    public <U> StagedFuture<U> thenIf(Function<T, Optional<U>> proc) {
+    public <U> TimeoutStagedFuture<U> thenIf(Function<T, Optional<U>> proc) {
         Objects.requireNonNull(proc, "proc cannot be null");
 
         Function<T, Optional<U>> tracedProc = tracingProc(tracing, proc);
-        return new StagedFutureImpl<>(executor, future.thenApplyAsync(optional -> optional.flatMap(tracedProc), executor), max, tracing, true);
+        return new StagedFutureImpl<>(executor, future.thenApplyAsync(optional -> optional.flatMap(tracedProc), executor), tracing);
     }
 
     @Override
-    public <U> StagedFuture<U> then(CompletionStage<Optional<U>> stage) {
+    public <U> TimeoutStagedFuture<U> then(CompletionStage<Optional<U>> stage) {
         Objects.requireNonNull(stage, "stage cannot be null");
         // TODO needs testing - I'm not certain this does what's intended
-        return new StagedFutureImpl<>(executor, future.thenComposeAsync(__ -> stage, executor), max, tracing, true);
+        return new StagedFutureImpl<>(executor, future.thenComposeAsync(__ -> stage, executor), tracing);
     }
 
     @Override
-    public <U> StagedFuture<U> then(Function<T, U> proc)
+    public <U> TimeoutStagedFuture<U> then(Function<T, U> proc)
     {
         return thenIf(v -> Optional.of(proc.apply(v)));
+    }
+
+    @Override
+    public StagedFuture<T> withTimeout(Duration max) {
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max);
+        return new StagedFutureImpl<>(executor, timeout, tracing);
+    }
+
+    @Override
+    public StagedFuture<T> withTimeout(Duration max, Supplier<T> defaultValue) {
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.ofNullable(defaultValue.get()));
+        return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
     @Override
@@ -93,7 +95,7 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
             optional.ifPresent(handler);
             return optional;
         });
-        return new StagedFutureImpl<>(executor, next, null, tracing, false);
+        return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
@@ -108,7 +110,7 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
             }
             return optional;
         });
-        return new StagedFutureImpl<>(executor, next, null, tracing, false);
+        return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
@@ -120,7 +122,7 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
             }
             return optional;
         });
-        return new StagedFutureImpl<>(executor, next, null, tracing, false);
+        return new StagedFutureImpl<>(executor, next, tracing);
     }
 
     @Override
@@ -129,13 +131,12 @@ class StagedFutureImpl<T> implements StagedFuture<T> {
             handler.accept(e);
             return Optional.empty();
         });
-        return new StagedFutureImpl<>(executor, next, null, tracing, false);
+        return new StagedFutureImpl<>(executor, next, tracing);
     }
 
-    private StagedFutureImpl(Executor executor, CompletionStage<Optional<T>> future, Duration max, Tracing tracing, boolean applyMax) {
+    private StagedFutureImpl(Executor executor, CompletionStage<Optional<T>> future, Tracing tracing) {
         this.executor = executor;
-        this.max = max;
-        this.future = (applyMax && (max != null)) ? Timeout.within(future, max) : future;
+        this.future = future;
         this.tracing = tracing;
     }
 

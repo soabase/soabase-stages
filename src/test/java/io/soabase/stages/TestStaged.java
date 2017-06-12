@@ -11,8 +11,7 @@ public class TestStaged {
     @Test
     public void testBasic() throws Exception {
         StagedFutureTerminal<String> stagedFuture = StagedFuture.async(Executors.newCachedThreadPool(), Tracing.console())
-            .withTimeout(Duration.ofSeconds(5))
-            .then(() -> simulateFindFile("hey"))
+            .then(() -> simulateFindFile("hey")).withTimeout(Duration.ofSeconds(5), () -> new File("timed-out"))
             .then(f -> simulateReadFile(f, true))
             .whenComplete(System.out::println)
             .whenFailed(Throwable::printStackTrace);

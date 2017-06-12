@@ -3,6 +3,7 @@ package io.soabase.stages;
 import java.time.Duration;
 import java.util.concurrent.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -41,7 +42,7 @@ public class Timeout {
      * @param defaultValue value to complete with on duration elapse
      * @return new CompletionStage
      */
-    public static <T> CompletionStage<T> within(CompletionStage<T> future, Duration duration, T defaultValue) {
+    public static <T> CompletionStage<T> within(CompletionStage<T> future, Duration duration, Supplier<T> defaultValue) {
         final CompletionStage<T> timeout = internalFailAfter(duration, defaultValue, true);
         return future.applyToEither(timeout, Function.identity());
     }
@@ -65,16 +66,16 @@ public class Timeout {
      * @param defaultValue value to complete with on duration elapse
      * @return new CompletionStage
      */
-    public static <T> CompletionStage<T> failAfter(Duration duration, T defaultValue) {
+    public static <T> CompletionStage<T> failAfter(Duration duration, Supplier<T> defaultValue) {
         return internalFailAfter(duration, defaultValue, true);
     }
 
-    private static <T> CompletionStage<T> internalFailAfter(Duration duration, T defaultValue, boolean useDefaultValue) {
+    private static <T> CompletionStage<T> internalFailAfter(Duration duration, Supplier<T> defaultValue, boolean useDefaultValue) {
         final CompletableFuture<T> future = new CompletableFuture<>();
         scheduler.schedule(() -> {
             final TimeoutException ex = new TimeoutException("Timeout after " + duration);
             if ( useDefaultValue ) {
-                return future.complete(defaultValue);
+                return future.complete(defaultValue.get());
             }
             return future.completeExceptionally(ex);
         }, duration.toMillis(), MILLISECONDS);
