@@ -22,7 +22,7 @@ CompletableFuture/CompletionStage API is awkward and difficult to use.
 ```java
 StagedFuture.async(executor)
     .then(() -> queryDatabaseFor("something")).withTimeout(Duration.ofSeconds(25))
-    .then(record -> applyRecord(record))
+    .thenIf(record -> applyRecord(record)) // chain aborts if no record found
     .whenComplete(result -> handleResult(result))
     .whenFailed(e -> handleFailure(e));
 ``` 
