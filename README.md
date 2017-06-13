@@ -82,3 +82,25 @@ _Access The Internal CompletionStage_
 You can access the internally managed `CompletionStage` via:
 
 - `unwrap()` - returns the `CompletionStage<Optional<T>>`.
+
+### Tracing
+
+The tasks submitted to StagedFuture can optionally be traced via the `Tracing` interface. The library comes with an SLF4J tracer and an standard out tracer. You can also write your own. Pass an instace of the tracer to the StagedFuture builder. E.g.
+
+```java
+StagedFuture.async(executor, Tracing.debug(logger)).
+    then(...)
+    ...
+```
+
+### Manual Wrappers
+
+The CompletionStage wrappers that StagedFuture uses internally can be used directly without having to use `StagedFuture`.
+
+#### Timeout
+
+The `Timeout` class has methods that wrap `CompletionStage` and add timeouts and timeouts with default values. It roughly emulates the forthcoming Java 9 timeout features for CompletableFuture.
+
+#### Aborted
+
+The `Aborted` class has methods that wrap `CompletionStage` and calling given handlers when the stange completes with an empty `Optional`.
