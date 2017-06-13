@@ -103,4 +103,4 @@ The `Timeout` class has methods that wrap `CompletionStage` adding timeouts and 
 
 #### Aborted
 
-The `Aborted` class has methods that wrap `CompletionStage` and call given handlers when the stange completes with an empty `Optional`.
+The `Aborted` class has methods that wrap `CompletionStage` and call given handlers when the stage completes with an empty `Optional`.
