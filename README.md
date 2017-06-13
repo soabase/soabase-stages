@@ -91,7 +91,7 @@ _Chaining Other Stages_
 You can include external stages into the chain:
 
 - `thenStage(Function<T, CompletionStage<U>> stage)` - executes the given stage asynchronously as the next task in the chain.
-- `thenStageIf(Function<T, CompletionStage<Optional<U>>> stage)` - executes the given stage asynchronously as the next task in the chain if the stage returns an empty Optional the chain is aborted.
+- `thenStageIf(Function<T, CompletionStage<Optional<U>>> stage)` - executes the given stage asynchronously as the next task in the chain. If the stage returns an empty Optional the chain is aborted.
 
 _Access The Internal CompletionStage_
 
