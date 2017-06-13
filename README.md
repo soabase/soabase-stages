@@ -1,6 +1,7 @@
 # soabase-stages
 
 [![Build Status](https://travis-ci.org/soabase/soabase-stages.svg?branch=master)](https://travis-ci.org/soabase/soabase-stages)
+[![Maven Central](https://img.shields.io/maven-central/v/io.soabase.stages/soabase-stages.svg)](http://search.maven.org/#search%7Cga%7C1%7soabase-stages)
 
 A tiny library that makes staged/pipelined CompletableFutures much easier to create and manage.
 
@@ -39,6 +40,12 @@ StagedFuture.async(executor)
 Note: you can easily access the managed `CompletionStage` when needed by calling `StagedFuture#unwrap()`.
 
 ### Using Stages
+
+Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages). Use your favorite build tool and specify:
+
+| GroupId | ArtifactId |
+|---------|------------|
+| io.soabase.stages | soabase-stages |
 
 #### Starting a chain
 
