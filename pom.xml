@@ -20,6 +20,7 @@
         <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
         <maven-javadoc-plugin-version>2.10.1</maven-javadoc-plugin-version>
         <maven-release-plugin-version>2.5.1</maven-release-plugin-version>
+        <maven-scm-provider-gitexe-version>1.9.4</maven-scm-provider-gitexe-version>
 
         <junit-version>4.12</junit-version>
         <assertj-version>3.6.2</assertj-version>
