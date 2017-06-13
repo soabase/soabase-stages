@@ -99,8 +99,8 @@ The CompletionStage wrappers that StagedFuture uses internally can be used direc
 
 #### Timeout
 
-The `Timeout` class has methods that wrap `CompletionStage` and add timeouts and timeouts with default values. It roughly emulates the forthcoming Java 9 timeout features for CompletableFuture.
+The `Timeout` class has methods that wrap `CompletionStage` adding timeouts and timeouts with default values. It roughly emulates the forthcoming Java 9 timeout features for CompletableFuture.
 
 #### Aborted
 
-The `Aborted` class has methods that wrap `CompletionStage` and calling given handlers when the stange completes with an empty `Optional`.
+The `Aborted` class has methods that wrap `CompletionStage` and call given handlers when the stange completes with an empty `Optional`.
