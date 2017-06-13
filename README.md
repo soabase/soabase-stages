@@ -1,7 +1,7 @@
 # soabase-stages
 
 [![Build Status](https://travis-ci.org/soabase/soabase-stages.svg?branch=master)](https://travis-ci.org/soabase/soabase-stages)
-[![Maven Central](https://img.shields.io/maven-central/v/io.soabase.stages/soabase-stages.svg)](http://search.maven.org/#search%7Cga%7C1%7soabase-stages)
+[![Maven Central](https://img.shields.io/maven-central/v/io.soabase.stages/soabase-stages.svg)](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages)
 
 A tiny library that makes staged/pipelined CompletableFutures much easier to create and manage.
 
