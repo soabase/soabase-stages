@@ -85,7 +85,7 @@ You can access the internally managed `CompletionStage` via:
 
 ### Tracing
 
-The tasks submitted to StagedFuture can optionally be traced via the `Tracing` interface. The library comes with an SLF4J tracer and an standard out tracer. You can also write your own. Pass an instace of the tracer to the StagedFuture builder. E.g.
+The tasks submitted to StagedFuture can optionally be traced via the `Tracing` interface. The library comes with an SLF4J tracer and a `System.out` tracer. You can also write your own. Pass an instace of the tracer to the StagedFuture builder. E.g.
 
 ```java
 StagedFuture.async(executor, Tracing.debug(logger)).
