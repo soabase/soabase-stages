@@ -25,7 +25,7 @@ StagedFuture.async(executor)
     .then(() -> queryDatabaseFor("something"))
         .withTimeout(Duration.ofSeconds(25))
     .thenIf(record -> applyRecord(record)) // chain aborts if no record found
-    .whenComplete(result -> handleResult(result))
+    .whenSucceeded(result -> handleResult(result))
     .whenAborted(() -> handleAbort())
     .whenFailed(e -> handleFailure(e));
 ``` 
@@ -82,8 +82,8 @@ _Completers_
 
 At any point in the chain, you can add handlers for successful completions, failures or aborts:
 
-- `whenComplete(Consumer<T> handler)` - if the chain completes successfully the handler is called.
-- `whenCompleteYield(Function<T, U> handler)` - same as `whenComplete()` but allows mapping the return type.
+- `whenSucceeded(Consumer<T> handler)` - if the chain completes successfully the handler is called.
+- `whenSucceededYield(Function<T, U> handler)` - same as `whenSucceeded()` but allows mapping the return type.
 - `whenAborted(Runnable handler)` - if the chain is aborted (i.e. one of the `thenIf()` tasks returns empty) the handler is called.
 - `whenFailed(Consumer<Throwable> handler)` - if there is an exception or failure in the chain the handler is called.
 - `whenFinal(Runnable handler)` - calls the handler when the chain completes in any way (success, abort, exception, etc.).

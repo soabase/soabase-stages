@@ -171,7 +171,7 @@ public interface StagedFuture<T> {
      * @param handler consumer for the value
      * @return next stage in the chain
      */
-    StagedFuture<T> whenComplete(Consumer<T> handler);
+    StagedFuture<T> whenSucceeded(Consumer<T> handler);
 
     /**
      * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.
@@ -180,7 +180,7 @@ public interface StagedFuture<T> {
      * @param handler mapper for the value
      * @return next stage in the chain
      */
-    <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler);
+    <U> StagedFuture<U> whenSucceededYield(Function<T, U> handler);
 
     /**
      * If this stage or any previous stages in the chain return {@link Optional#empty()}

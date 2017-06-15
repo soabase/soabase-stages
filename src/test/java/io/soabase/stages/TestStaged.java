@@ -59,7 +59,7 @@ public class TestStaged {
             .then(() -> worker("1"))
             .then(s -> worker("2"))
             .then(s -> worker("3"))
-            .whenCompleteYield(s -> tracing.getTracing());
+            .whenSucceededYield(s -> tracing.getTracing());
 
         Optional<List<TestTracing.Trace>> optional = complete(future);
         assertThat(optional).isPresent();
@@ -82,7 +82,7 @@ public class TestStaged {
         complete(StagedFuture.sync()
             .then(() -> Optional.of("hey"))
             .then(heyOpt -> (heyOpt.isPresent() && heyOpt.get().equals("hey")) ? Optional.empty() : Optional.of("fail"))
-            .whenComplete(shouldBeEmpty -> weGotHere.set(!shouldBeEmpty.isPresent())));
+            .whenSucceeded(shouldBeEmpty -> weGotHere.set(!shouldBeEmpty.isPresent())));
         assertThat(weGotHere.get()).isTrue();
     }
 

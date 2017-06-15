@@ -131,18 +131,18 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     }
 
     @Override
-    public StagedFuture<T> whenComplete(Consumer<T> handler) {
+    public StagedFuture<T> whenSucceeded(Consumer<T> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        return whenCompleteYield(value -> {
+        return whenSucceededYield(value -> {
             handler.accept(value);
             return value;
         });
     }
 
     @Override
-    public <U> StagedFuture<U> whenCompleteYield(Function<T, U> handler) {
+    public <U> StagedFuture<U> whenSucceededYield(Function<T, U> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<U>> next = Aborted.whenCompleteAsync(future, value -> Optional.of(handler.apply(value)));
+        CompletionStage<Optional<U>> next = Aborted.whenSucceededAsync(future, value -> Optional.of(handler.apply(value)));
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 

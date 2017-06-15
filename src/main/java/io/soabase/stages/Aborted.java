@@ -39,7 +39,7 @@ public class Aborted {
      * @param handler success handler - called only when the given stage returns a non-empty Optional
      * @return new CompletionStage
      */
-    public static <T, U> CompletionStage<Optional<U>> whenComplete(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler)
+    public static <T, U> CompletionStage<Optional<U>> whenSucceeded(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler)
     {
         return stage.thenApply(optional -> optional.flatMap(handler));
     }
@@ -53,7 +53,7 @@ public class Aborted {
      * @param handler success handler - called only when the given stage returns a non-empty Optional
      * @return new CompletionStage
      */
-    public static <T, U> CompletionStage<Optional<U>> whenCompleteAsync(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler)
+    public static <T, U> CompletionStage<Optional<U>> whenSucceededAsync(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler)
     {
         return stage.thenApplyAsync(optional -> optional.flatMap(handler));
     }
@@ -68,7 +68,7 @@ public class Aborted {
      * @param executor the executor to use for asynchronous execution
      * @return new CompletionStage
      */
-    public static <T, U> CompletionStage<Optional<U>> whenCompleteAsync(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler, Executor executor)
+    public static <T, U> CompletionStage<Optional<U>> whenSucceededAsync(CompletionStage<Optional<T>> stage, Function<T, Optional<U>> handler, Executor executor)
     {
         return stage.thenApplyAsync(optional -> optional.flatMap(handler), executor);
     }
