@@ -47,6 +47,8 @@ Stages is available from [Maven Central](http://search.maven.org/#search%7Cga%7C
 |---------|------------|
 | io.soabase.stages | soabase-stages |
 
+[Change Log](https://github.com/soabase/soabase-stages/blob/master/CHANGELOG.md)
+
 #### Starting a chain
 
 Similarly to the builders in `CompletableFuture` you start a chain using the builders in `StagedFuture`. There are syncrhonous and asynchronous builders:
@@ -111,7 +113,7 @@ StagedFuture.async(executor, Tracing.debug(logger)).
 
 #### Cancelable Tracer
 
-The special purpose tracer, `Cancelable` can be used to enable canceling a running chaing.
+The special purpose tracer, `Cancelable`, can be used to enable canceling a running chaing.
 It keeps track of the threads in use by the StagedFuture it is associated with. At any time you can call cancelChain(boolean) to interrupt currently running tasks and prevent 
 new tasks from running. E.g.
 
