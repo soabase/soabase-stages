@@ -1,7 +1,7 @@
 # soabase-stages
 
 [![Build Status](https://travis-ci.org/soabase/soabase-stages.svg?branch=master)](https://travis-ci.org/soabase/soabase-stages)
-[![Maven Central](https://img.shields.io/maven-central/v/io.soabase.stages/soabase-stages.svg)](http://search.maven.org/#search%7Cga%7C1%7soabase-stages)
+[![Maven Central](https://img.shields.io/maven-central/v/io.soabase.stages/soabase-stages.svg)](http://search.maven.org/#search%7Cga%7C1%7Csoabase-stages)
 
 A tiny library that makes staged/pipelined CompletableFutures much easier to create and manage.
 
@@ -81,8 +81,17 @@ _Completers_
 At any point in the chain, you can add handlers for successful completions, failures or aborts:
 
 - `whenComplete(Consumer<T> handler)` - if the chain completes successfully the handler is called.
+- `whenCompleteYield(Function<T, U> handler)` - same as `whenComplete()` but allows mapping the return type.
 - `whenAborted(Runnable handler)` - if the chain is aborted (i.e. one of the `thenIf()` tasks returns empty) the handler is called.
 - `whenFailed(Consumer<Throwable> handler)` - if there is an exception or failure in the chain the handler is called.
+- `whenFinal(Runnable handler)` - calls the handler when the chain completes in any way (success, abort, exception, etc.).
+
+_Chaining Other Stages_
+
+You can include external stages into the chain:
+
+- `thenStage(Function<T, CompletionStage<U>> stage)` - executes the given stage asynchronously as the next task in the chain.
+- `thenStageIf(Function<T, CompletionStage<Optional<U>>> stage)` - executes the given stage asynchronously as the next task in the chain. If the stage returns an empty Optional the chain is aborted.
 
 _Access The Internal CompletionStage_
 
