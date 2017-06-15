@@ -15,7 +15,9 @@
  */
 package io.soabase.stages;
 
+import io.soabase.stages.tracing.Cancelable;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -193,6 +195,40 @@ public class TestStaged {
         assertThat(traces.get(2).context).isEqualTo("2");
         assertThat(traces.get(3).status).isEqualTo("fail");
         assertThat(traces.get(3).context).isEqualTo("2");
+    }
+
+    @Test
+    public void testCancelable() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean wasInterrupted = new AtomicBoolean(false);
+        Cancelable cancelable = new Cancelable(tracing);
+        StagedFuture<String> staged = StagedFuture.async(executor, cancelable)
+            .then(() -> worker("1"))
+            .then(s -> {
+                latch.countDown();
+                try {
+                    return hangingWorker("2");
+                } catch (RuntimeException e) {
+                    if ( Thread.currentThread().isInterrupted() ) {
+                        wasInterrupted.set(true);
+                    }
+                    throw e;
+                }
+            })
+            .then(s -> worker("3"))
+            .then(s -> worker("4"));
+
+        latch.await();
+
+        cancelable.cancelChain(true);
+        try {
+            complete(staged);
+            Assert.fail("Should have thrown");
+        } catch (Exception e) {
+            assertThat(e.getCause()).isNotNull();
+            assertThat(e.getCause().getCause()).isNotNull();
+            assertThat(e.getCause().getCause()).isInstanceOf(InterruptedException.class);
+        }
     }
 
     private <T> Optional<T> complete(StagedFuture<T> stagedFuture) throws Exception {
