@@ -1,5 +1,12 @@
 # Change Log
 
+## [soabase-stages-0.1.2](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.2) (2017-06-15)
+[Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.1...soabase-stages-0.1.2)
+
+**Closed issues:**
+
+- rename whenCompleted\* to whenSucceeded [\#2](https://github.com/soabase/soabase-stages/issues/2)
+
 ## [soabase-stages-0.1.1](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.1) (2017-06-15)
 [Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.0...soabase-stages-0.1.1)
 
