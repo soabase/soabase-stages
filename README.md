@@ -118,7 +118,7 @@ It keeps track of the threads in use by the StagedFuture it is associated with. 
 
 ```java
 Cancelable cancelable = new Cancelable();
-StagedFuture<String> staged = StagedFuture.async(executor, cancelable)
+StagedFuture.async(executor, cancelable)
     .then(() -> worker("1"))
     .then(s -> hangingWorker("2"))
     .then(s -> worker("3"))
