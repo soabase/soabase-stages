@@ -25,8 +25,8 @@ StagedFuture.async(executor)
     .then(() -> queryDatabaseFor("something"))
         .withTimeout(Duration.ofSeconds(25))
     .thenIf(record -> applyRecord(record)) // chain aborts if no record found
-    .then(() -> returnNextRecord(record))
-    .whenSucceeded(result -> handleResult(result))
+    .then(result -> returnNextRecord(record))
+    .whenSucceeded(nextResult -> handleResult(nextResult))
     .whenAborted(() -> handleAbort())
     .whenFailed(e -> handleFailure(e));
 ``` 
