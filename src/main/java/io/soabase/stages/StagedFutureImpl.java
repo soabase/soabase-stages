@@ -110,7 +110,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
         CompletionStage<Optional<U>> stageIf = future.thenComposeAsync(optional -> {
             if ( optional.isPresent() ) {
                 CompletionStage<U> applied = stage.apply(optional.get());
-                return applied.thenApplyAsync(Optional::of, executor);
+                return applied.thenApplyAsync(StagedFutureImpl::of, executor);
             }
 
             return CompletableFuture.completedFuture(Optional.empty());
