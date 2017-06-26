@@ -88,7 +88,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFutureTimeout<U> then(Function<T, U> proc)
     {
-        return thenIf(v -> Optional.of(proc.apply(v)));
+        return thenIf(v -> of(proc.apply(v)));
     }
 
     @Override
@@ -126,7 +126,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
 
     @Override
     public StagedFuture<T> withTimeout(Duration max, Supplier<T> defaultValue) {
-        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> Optional.of(defaultValue.get()));
+        CompletionStage<Optional<T>> timeout = Timeout.within(future, max, () -> of(defaultValue.get()));
         return new StagedFutureImpl<>(executor, timeout, tracing);
     }
 
@@ -142,7 +142,7 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
     @Override
     public <U> StagedFuture<U> whenSucceededYield(Function<T, U> handler) {
         Objects.requireNonNull(handler, "handler cannot be null");
-        CompletionStage<Optional<U>> next = Aborted.whenSucceededAsync(future, value -> Optional.of(handler.apply(value)));
+        CompletionStage<Optional<U>> next = Aborted.whenSucceededAsync(future, value -> of(handler.apply(value)));
         return new StagedFutureImpl<>(executor, next, tracing);
     }
 
@@ -213,5 +213,12 @@ class StagedFutureImpl<T> implements StagedFuture<T>, StagedFutureTimeout<T> {
         }
 
         return () -> trace(tracing, proc);
+    }
+
+    private static <T> Optional<T> of(T value) {
+        if ( value == null ) {
+            throw new RuntimeException("Stages does not support null values");
+        }
+        return Optional.of(value);
     }
 }

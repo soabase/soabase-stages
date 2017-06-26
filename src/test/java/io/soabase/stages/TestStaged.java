@@ -231,6 +231,15 @@ public class TestStaged {
         }
     }
 
+    @Test(expected = ExecutionException.class)
+    public void testNullReturn() throws Exception {
+        complete(StagedFuture.async(executor, tracing)
+            .then(() -> worker("1"))
+            .then(s -> null)
+            .then(s -> worker("3"))
+            .then(s -> worker("4")));
+    }
+
     private <T> Optional<T> complete(StagedFuture<T> stagedFuture) throws Exception {
         return complete(stagedFuture.unwrap());
     }
