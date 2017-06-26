@@ -25,7 +25,8 @@ StagedFuture.async(executor)
     .then(() -> queryDatabaseFor("something"))
         .withTimeout(Duration.ofSeconds(25))
     .thenIf(record -> applyRecord(record)) // chain aborts if no record found
-    .whenSucceeded(result -> handleResult(result))
+    .then(result -> returnNextRecord(record))
+    .whenSucceeded(nextResult -> handleResult(nextResult))
     .whenAborted(() -> handleAbort())
     .whenFailed(e -> handleFailure(e));
 ``` 
@@ -118,7 +119,7 @@ It keeps track of the threads in use by the StagedFuture it is associated with. 
 
 ```java
 Cancelable cancelable = new Cancelable();
-StagedFuture<String> staged = StagedFuture.async(executor, cancelable)
+StagedFuture.async(executor, cancelable)
     .then(() -> worker("1"))
     .then(s -> hangingWorker("2"))
     .then(s -> worker("3"))
