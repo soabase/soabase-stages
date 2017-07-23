@@ -114,27 +114,6 @@ public interface StagedFuture<T> {
 
     /**
      * <p>
-     * If the current stage completes successfully, execute the given task
-     * synchronously or asynchronously depending on how the StagedFuture was built.
-     * The given task receives the result of this stage's execution.
-     * </p>
-     *
-     * <p>
-     * Note: the returned value is a {@link StagedFutureTimeout} which allows
-     * a timeout and an optional default to be set for the task.
-     * </p>
-     *
-     * <p>
-     * Important: Procs that return <code>null</code> are not supported
-     * </p>
-     *
-     * @param proc task to execute
-     * @return next stage in the chain
-     */
-    <U> StagedFutureTimeout<U> then(Function<T, U> proc);
-
-    /**
-     * <p>
      * If the current stage completes successfully, chain to the given CompletionStage
      * synchronously or asynchronously depending on how the StagedFuture was built.
      * </p>
@@ -148,22 +127,6 @@ public interface StagedFuture<T> {
      * @return next stage in the chain
      */
     <U> StagedFutureTimeout<U> thenStageIf(Function<T, CompletionStage<Optional<U>>> stage);
-
-    /**
-     * <p>
-     * If the current stage completes successfully, chain to the given CompletionStage
-     * synchronously or asynchronously depending on how the StagedFuture was built.
-     * </p>
-     *
-     * <p>
-     * Note: the returned value is a {@link StagedFutureTimeout} which allows
-     * a timeout and an optional default to be set for the task.
-     * </p>
-     *
-     * @param stage stage to chain to
-     * @return next stage in the chain
-     */
-    <U> StagedFutureTimeout<U> thenStage(Function<T, CompletionStage<U>> stage);
 
     /**
      * If the stage and any previous stages in the chain complete successfully, the handler is called with the resulting value.

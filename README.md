@@ -22,10 +22,10 @@ CompletableFuture/CompletionStage API is awkward and difficult to use.
 
 ```java
 StagedFuture.async(executor)
-    .then(() -> queryDatabaseFor("something"))
+    .thenIf(() -> queryDatabaseFor("something"))
         .withTimeout(Duration.ofSeconds(25))
     .thenIf(record -> applyRecord(record)) // chain aborts if no record found
-    .then(result -> returnNextRecord(record))
+    .thenIf(result -> returnNextRecord(record))
     .whenSucceeded(nextResult -> handleResult(nextResult))
     .whenAborted(() -> handleAbort())
     .whenFailed(e -> handleFailure(e));
@@ -60,24 +60,22 @@ Similarly to the builders in `CompletableFuture` you start a chain using the bui
 
 #### Adding tasks to the chain
 
-Tasks are added to the chain using one of the "then" methods. The first task added is specified via a supplier and subsequent tasks are specified via functions that take the result of the previous task:
+Tasks are added to the chain using one of the "thenIf" methods. The first task added is specified via a supplier and subsequent tasks are specified via functions that take the result of the previous task:
 
 _Initial Task_
 
-- `then(Supplier<U> proc)` - Execute the given task synchronously or asynchronously depending on how the StagedFuture was built. The result is passed to the next task in the chain.
 - `thenIf(Supplier<Optional<U>> proc)` - Execute the given task synchronously or asynchronously depending on how the StagedFuture was built. The given task returns an optional value that indicates whether or not the next stage can execute. If `Optional.empty()` is returned, the entire StagedFuture chain is considered to be aborted and no future tasks will execute. The `StagedFuture.whenAborted()` completer will get called.
 
 _Subsequent Tasks_
 
-- `then(Function<T, U> proc)` - If the chain has not been aborted or errored, the result of the current task is passed to this new task synchronously or asynchronously depending on how the StagedFuture was built. The new result of the given task is passed to the next task in the chain.
 - `thenIf(Function<T, Optional<U>> proc)` - If the chain has not been aborted or errored, the result of the current task is passed to this new task synchronously or asynchronously depending on how the StagedFuture was built. The given task returns an optional value that indicates whether or not the next stage can execute. If `Optional.empty()` is returned, the entire StagedFuture chain is considered to be aborted and no future tasks will execute. The `StagedFuture.whenAborted()` completer will get called.
 
 _Timeouts_
 
 The "then" methods (see above) can optional be assigned a timeout or a timeout and default value:
 
-- `thenXX(X).withTimeout(Duration timeout)` - Sets a timeout for this stage's task. If the given timeout elapses before the task completes this stage is completed exceptionally with a `TimeoutException`.
-- `thenXX(X).withTimeout(Duration timeout, Supplier<T> defaultValue)` - Sets a timeout for this stage's task. If the given timeout elapses before the task completes this stage is completed with the given default value.
+- `thenIf(X).withTimeout(Duration timeout)` - Sets a timeout for this stage's task. If the given timeout elapses before the task completes this stage is completed exceptionally with a `TimeoutException`.
+- `thenIf(X).withTimeout(Duration timeout, Supplier<T> defaultValue)` - Sets a timeout for this stage's task. If the given timeout elapses before the task completes this stage is completed with the given default value.
 
 _Completers_
 
@@ -93,7 +91,6 @@ _Chaining Other Stages_
 
 You can include external stages into the chain:
 
-- `thenStage(Function<T, CompletionStage<U>> stage)` - executes the given stage asynchronously as the next task in the chain.
 - `thenStageIf(Function<T, CompletionStage<Optional<U>>> stage)` - executes the given stage asynchronously as the next task in the chain. If the stage returns an empty Optional the chain is aborted.
 
 _Access The Internal CompletionStage_
@@ -120,10 +117,10 @@ It keeps track of the threads in use by the StagedFuture it is associated with. 
 ```java
 Cancelable cancelable = new Cancelable();
 StagedFuture.async(executor, cancelable)
-    .then(() -> worker("1"))
-    .then(s -> hangingWorker("2"))
-    .then(s -> worker("3"))
-    .then(s -> worker("4"));
+    .thenIf(() -> worker("1"))
+    .thenIf(s -> hangingWorker("2"))
+    .thenIf(s -> worker("3"))
+    .thenIf(s -> worker("4"));
 
 cancelable.cancel(true);    // hangingWorker() gets interrupted 
 ```
