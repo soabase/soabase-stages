@@ -56,9 +56,9 @@ public class TestStaged {
     @Test
     public void testBasic() throws Exception {
         StagedFuture<List<TestTracing.Trace>> future = StagedFuture.sync(tracing)
-            .then(() -> worker("1"))
-            .then(s -> worker("2"))
-            .then(s -> worker("3"))
+            .thenIf(() -> worker("1"))
+            .thenIf(s -> worker("2"))
+            .thenIf(s -> worker("3"))
             .whenSucceededYield(s -> tracing.getTracing());
 
         Optional<List<TestTracing.Trace>> optional = complete(future);
@@ -77,26 +77,16 @@ public class TestStaged {
     }
 
     @Test
-    public void testWrappedOptional() throws Exception {
-        AtomicBoolean weGotHere = new AtomicBoolean();
-        complete(StagedFuture.sync()
-            .then(() -> Optional.of("hey"))
-            .then(heyOpt -> (heyOpt.isPresent() && heyOpt.get().equals("hey")) ? Optional.empty() : Optional.of("fail"))
-            .whenSucceeded(shouldBeEmpty -> weGotHere.set(!shouldBeEmpty.isPresent())));
-        assertThat(weGotHere.get()).isTrue();
-    }
-
-    @Test
     public void testAbort() throws Exception {
         AtomicBoolean isAborted = new AtomicBoolean(false);
         complete(StagedFuture.sync(tracing)
-            .then(() -> worker("1"))
+            .thenIf(() -> worker("1"))
             .thenIf(s -> Optional.empty())
-            .then(s -> worker("2"))
-            .then(s -> worker("3"))
-            .then(s -> worker("4"))
-            .then(s -> worker("5"))
-            .then(s -> worker("6"))
+            .thenIf(s -> worker("2"))
+            .thenIf(s -> worker("3"))
+            .thenIf(s -> worker("4"))
+            .thenIf(s -> worker("5"))
+            .thenIf(s -> worker("6"))
             .whenAborted(() -> isAborted.set(true)));
 
         assertThat(isAborted.get()).isTrue();
@@ -117,10 +107,10 @@ public class TestStaged {
     public void testTimeout() throws Exception {
         AtomicBoolean isTimeout = new AtomicBoolean(false);
         complete(StagedFuture.async(executor, tracing)
-            .then(() -> worker("1"))
-            .then(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2))
-            .then(s -> worker("3"))
-            .then(s -> worker("4"))
+            .thenIf(() -> worker("1"))
+            .thenIf(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2))
+            .thenIf(s -> worker("3"))
+            .thenIf(s -> worker("4"))
             .whenFailed(e -> {
                 while ( e instanceof CompletionException ) {
                     e = e.getCause();
@@ -145,10 +135,10 @@ public class TestStaged {
     @Test
     public void testTimeoutAndDefault() throws Exception {
         complete(StagedFuture.async(executor, tracing)
-            .then(() -> worker("1"))
-            .then(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2), () -> "default")
-            .then(this::worker)
-            .then(s -> worker("4")));
+            .thenIf(() -> worker("1"))
+            .thenIf(s -> hangingWorker("2")).withTimeout(Duration.ofSeconds(2), () -> "default")
+            .thenIf(this::worker)
+            .thenIf(s -> worker("4")));
 
         List<TestTracing.Trace> traces = tracing.getTracing();
         assertThat(traces).size().isEqualTo(7);
@@ -172,10 +162,10 @@ public class TestStaged {
     public void testFailure() throws Exception {
         AtomicReference<String> exceptionMessage = new AtomicReference<>();
         complete(StagedFuture.async(executor, tracing)
-            .then(() -> worker("1"))
-            .then(s -> failureWorker("2"))
-            .then(s -> worker("3"))
-            .then(s -> worker("4"))
+            .thenIf(() -> worker("1"))
+            .thenIf(s -> failureWorker("2"))
+            .thenIf(s -> worker("3"))
+            .thenIf(s -> worker("4"))
             .whenFailed(e -> {
                 while ( e instanceof CompletionException ) {
                     e = e.getCause();
@@ -203,8 +193,8 @@ public class TestStaged {
         AtomicBoolean wasInterrupted = new AtomicBoolean(false);
         Cancelable cancelable = new Cancelable(tracing);
         StagedFuture<String> staged = StagedFuture.async(executor, cancelable)
-            .then(() -> worker("1"))
-            .then(s -> {
+            .thenIf(() -> worker("1"))
+            .thenIf(s -> {
                 latch.countDown();
                 try {
                     return hangingWorker("2");
@@ -215,8 +205,8 @@ public class TestStaged {
                     throw e;
                 }
             })
-            .then(s -> worker("3"))
-            .then(s -> worker("4"));
+            .thenIf(s -> worker("3"))
+            .thenIf(s -> worker("4"));
 
         latch.await();
 
@@ -231,15 +221,6 @@ public class TestStaged {
         }
     }
 
-    @Test(expected = ExecutionException.class)
-    public void testNullReturn() throws Exception {
-        complete(StagedFuture.async(executor, tracing)
-            .then(() -> worker("1"))
-            .then(s -> null)
-            .then(s -> worker("3"))
-            .then(s -> worker("4")));
-    }
-
     private <T> Optional<T> complete(StagedFuture<T> stagedFuture) throws Exception {
         return complete(stagedFuture.unwrap());
     }
@@ -248,19 +229,19 @@ public class TestStaged {
         return stage.toCompletableFuture().get(5, TimeUnit.SECONDS);
     }
 
-    private String worker(String context) {
+    private Optional<String> worker(String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
-        return context;
+        return Optional.of(context);
     }
 
-    private String failureWorker(@SuppressWarnings("SameParameterValue") String context) {
+    private Optional<String> failureWorker(@SuppressWarnings("SameParameterValue") String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
         throw new RuntimeException(context);
     }
 
-    private String hangingWorker(@SuppressWarnings("SameParameterValue") String context) {
+    private Optional<String> hangingWorker(@SuppressWarnings("SameParameterValue") String context) {
         TestTracing.setContext(context);
         tracing.resetLastContext(context);
         try {
@@ -269,6 +250,6 @@ public class TestStaged {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
-        return context;
+        return Optional.of(context);
     }
 }

@@ -33,11 +33,6 @@ class StagedFutureBuilderImpl<T> implements StagedFutureBuilder {
     }
 
     @Override
-    public <U> StagedFutureTimeout<U> then(Supplier<U> proc) {
-        return thenIf(() -> Optional.of(proc.get()));
-    }
-
-    @Override
     public <U> StagedFutureTimeout<U> thenIf(Supplier<Optional<U>> proc) {
         return new StagedFutureImpl<>(proc, executor, tracing);
     }
@@ -45,11 +40,5 @@ class StagedFutureBuilderImpl<T> implements StagedFutureBuilder {
     @Override
     public <U> StagedFutureTimeout<U> thenStageIf(CompletionStage<Optional<U>> stage) {
         return new StagedFutureImpl<>(stage, executor, tracing);
-    }
-
-    @Override
-    public <U> StagedFutureTimeout<U> thenStage(CompletionStage<U> stage) {
-        // async isn't necessary - it's just a conversion to optional
-        return new StagedFutureImpl<>(stage.thenApply(Optional::of), executor, tracing);
     }
 }
