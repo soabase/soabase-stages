@@ -1,5 +1,27 @@
 # Change Log
 
+## [soabase-stages-0.1.4](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.4) (2018-03-02)
+[Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.3.1...soabase-stages-0.1.4)
+
+**Closed issues:**
+
+- Simplify the API - make all methods "if" methods [\#5](https://github.com/soabase/soabase-stages/issues/5)
+- Is it possible to support nulls? [\#4](https://github.com/soabase/soabase-stages/issues/4)
+
+**Merged pull requests:**
+
+- \[Issue 5\] Remove the non-if versions of the APIs [\#6](https://github.com/soabase/soabase-stages/pull/6) ([Randgalt](https://github.com/Randgalt))
+
+## [soabase-stages-0.1.3.1](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.3.1) (2017-06-26)
+[Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.3...soabase-stages-0.1.3.1)
+
+## [soabase-stages-0.1.3](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.3) (2017-06-26)
+[Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.2...soabase-stages-0.1.3)
+
+**Closed issues:**
+
+- Null values are not supported - have a better exception [\#3](https://github.com/soabase/soabase-stages/issues/3)
+
 ## [soabase-stages-0.1.2](https://github.com/soabase/soabase-stages/tree/soabase-stages-0.1.2) (2017-06-15)
 [Full Changelog](https://github.com/soabase/soabase-stages/compare/soabase-stages-0.1.1...soabase-stages-0.1.2)
 
